@@ -1,4 +1,4 @@
-
+from inteligenciaBot import IBot
 import tkinter as tk
 import random
 import time
@@ -15,6 +15,9 @@ class Main():
         self.placarUser = None
         self.pontosComputer = 0
         self.pontosUser = 0
+        self.deuVelha = 0
+        self.ibot = IBot(self.tagComputer)
+        self.userVencedor = False
 
         pass
 
@@ -22,7 +25,8 @@ class Main():
         self.root = tk.Tk()
         self.root.title("Jogo da Velha")
         tk.Label(self.root, text="Jogo da Velha", font=("Arial", 24)).grid(row=0, column=0, columnspan=3, pady=10)
-        self.root.geometry("317x500")
+        self.root.geometry("317x510")
+        self.root.resizable(False, False)
 
         self.botoes = []
         for i in range(3):
@@ -40,6 +44,9 @@ class Main():
         
         self.placarComputer = tk.Label(self.root, text=f"Computador: {self.pontosComputer}", font=("Arial", 12))
         self.placarComputer.place(x=10, y=455)
+        
+        self.placarVelha = tk.Label(self.root, text=f"Deu Velha: {self.deuVelha}", font=("Arial", 12))
+        self.placarVelha.place(x=10, y=475)
 
         self.root.mainloop()
 
@@ -50,30 +57,15 @@ class Main():
         self.root.update_idletasks()
 
         if not self.checkWinner():
-            self.setButtonTextComputer()
-    
-    def setButtonTextComputer(self):
-        time.sleep(1)
-        availableButtons = []
+            self.jogadaComputador()
+        else:
+            if self.userVencedor:
+                self.jogadaComputador()
 
-        for i in range(3):
-            for j in range(3):
-                if self.botoes[i][j]['text'] == "":
-                    availableButtons.append([i, j])
-
-
-        if availableButtons:
-            randomButton = random.choice(availableButtons)
-            x, y = randomButton
-            self.botoes[x][y].config(text=self.tagComputer, fg="red")
-            self.botoes[x][y].config(state=tk.DISABLED)
-        
-        self.checkWinner()    
-        
-        return
-        
+            
     def checkWinner(self):
         vencedor = False
+        self.userVencedor = False
         botoesVencedores = []
 
         for linha in range(3):
@@ -86,6 +78,7 @@ class Main():
                 
                 if self.botoes[linha][0]['text'] == self.tagUser:
                     self.pontosUser += 1
+                    self.userVencedor = True
                 else:
                     self.pontosComputer += 1
                 
@@ -100,6 +93,7 @@ class Main():
                     botoesVencedores = [self.botoes[0][coluna], self.botoes[1][coluna], self.botoes[2][coluna]]
                     if self.botoes[0][coluna]['text'] == self.tagUser:
                         self.pontosUser += 1
+                        self.userVencedor = True
                     else:
                         self.pontosComputer += 1
                     break
@@ -111,6 +105,7 @@ class Main():
                 botoesVencedores = [self.botoes[0][0], self.botoes[1][1], self.botoes[2][2]]
                 if self.botoes[0][0]['text'] == self.tagUser:
                     self.pontosUser += 1
+                    self.userVencedor = True
                 else:
                     self.pontosComputer += 1
             # Diagonal secundária
@@ -119,6 +114,7 @@ class Main():
                 botoesVencedores = [self.botoes[0][2], self.botoes[1][1], self.botoes[2][0]]
                 if self.botoes[0][2]['text'] == self.tagUser:
                     self.pontosUser += 1
+                    self.userVencedor = True
                 else:
                     self.pontosComputer += 1
 
@@ -158,6 +154,9 @@ class Main():
                             self.botoes[i][j].config(bg="SystemButtonFace", fg="black")
                     self.root.update()
                     time.sleep(0.3)
+                
+                self.deuVelha += 1
+                self.placarVelha.config(text=f"Deu Velha: {self.deuVelha}")
 
                 self.root.update()
                 time.sleep(1)
@@ -168,8 +167,23 @@ class Main():
         for i in range(3):
             for j in range(3):
                 self.botoes[i][j].config(text="", state=tk.NORMAL, bg="SystemButtonFace", fg="black")
-        
+
+        self.ibot = IBot(self.tagComputer)
         self.root.update_idletasks()
+
+    def jogadaComputador(self):
+        availablePositions = [[i, j] for i in range(3) for j in range(3) if self.botoes[i][j]['text'] == '']
+        pos = self.ibot.decidirEstrategia(availablePositions, self.botoes)
+        if not pos:
+            pos = random.choice(availablePositions) if availablePositions else None
+        if not pos:
+            self.checkWinner()
+        elif pos:
+            self.botoes[pos[0]][pos[1]].config(text=self.tagComputer, fg="red")
+            self.botoes[pos[0]][pos[1]].config(state=tk.DISABLED)
+            self.root.update_idletasks()
+            self.checkWinner()
+
 
 if __name__ == "__main__":
     main = Main()
